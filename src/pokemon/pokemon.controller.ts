@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
+import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 
 @Controller('pokemon')
 export class PokemonController {
@@ -13,8 +22,10 @@ export class PokemonController {
   }
 
   @Get()
-  findAll() {
-    return this.pokemonService.findAll();
+  async findAll() {
+    const pokemons = await this.pokemonService.findAll();
+    if (pokemons.length === 0) throw new NotFoundException('no data found');
+    return { data: pokemons };
   }
 
   @Get(':id')
