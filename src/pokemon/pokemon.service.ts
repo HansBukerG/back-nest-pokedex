@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InternalServerErrorException } from '@nestjs/common/exceptions/internal-server-error.exception';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
@@ -25,13 +25,7 @@ export class PokemonService {
       );
       return pokemon;
     } catch (error) {
-      this.logger.warn(`${method}: ${error}`);
-      if (error.code == 11000) {
-        throw new BadRequestException('Pokemon already exists');
-      }
-      throw new InternalServerErrorException(
-        'There is an error, check server logs',
-      );
+      this.handleException(method, error);
     }
   }
 
@@ -42,25 +36,29 @@ export class PokemonService {
       if (pokemons.length === 0) return null;
       return pokemons;
     } catch (error) {
-      this.logger.error(`${method}: ${error}`);
-      throw new InternalServerErrorException(
-        'There is an error, check server logs',
-      );
+      this.handleException(method, error);
     }
   }
 
-  async findOne(name: string): Promise<Pokemon | null> {
+  async findOne(term: string): Promise<Pokemon | null> {
     const method = this.findOne.name;
     try {
-      const pokemon = await this.pokeModel.findOne({
-        name,
-      });
-      return pokemon || null;
+      let pokemon: Pokemon;
+      if (!isNaN(+term)) pokemon = await this.pokeModel.findOne({ dni: term });
+
+      if (!pokemon && isValidObjectId(term))
+        pokemon = await this.pokeModel.findById({ _id: term });
+
+      if (!pokemon)
+        pokemon = await this.pokeModel.findOne({
+          name: term.toLowerCase().trim(),
+        });
+
+      if (!pokemon) return null;
+
+      return pokemon;
     } catch (error) {
-      this.logger.error(`${method}: ${error}`);
-      throw new InternalServerErrorException(
-        'There is an error, check server logs',
-      );
+      this.handleException(method, error);
     }
   }
 
@@ -70,12 +68,10 @@ export class PokemonService {
       const pokemon = await this.pokeModel.findOne({
         _id,
       });
-      return pokemon || null;
+      if (!pokemon) return null;
+      return pokemon;
     } catch (error) {
-      this.logger.error(`${method}: ${error}`);
-      throw new InternalServerErrorException(
-        'There is an error, check server logs',
-      );
+      this.handleException(method, error);
     }
   }
 
@@ -97,26 +93,30 @@ export class PokemonService {
       }
       return pokemon;
     } catch (error) {
-      this.logger.error(`${method}: ${error}`);
-      throw new InternalServerErrorException(
-        'There is an error, check server logs',
-      );
+      this.handleException(method, error);
     }
   }
 
   async remove(_id: string): Promise<boolean> {
     const method = this.remove.name;
     try {
-      const pokemon = await this.findById(_id);
+      const pokemon = await this.findOne(_id);
       if (!pokemon) return false;
       const result = await this.pokeModel.deleteOne({ _id });
       if (result.deletedCount === 1) return true;
       return false;
     } catch (error) {
-      this.logger.error(`${method}: ${error}`);
-      throw new InternalServerErrorException(
-        'There is an error, check server logs',
-      );
+      this.handleException(method, error);
     }
+  }
+
+  private handleException(method: string, error: any) {
+    this.logger.warn(`${method}: ${error}`);
+    if (error.code == 11000) {
+      throw new BadRequestException('Pokemon already exists');
+    }
+    throw new InternalServerErrorException(
+      'There is an error, check server logs',
+    );
   }
 }
