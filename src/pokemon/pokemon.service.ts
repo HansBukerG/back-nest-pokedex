@@ -25,7 +25,7 @@ export class PokemonService {
       );
       return pokemon;
     } catch (error) {
-      this.logger.error(`${method}: ${error}`);
+      this.logger.warn(`${method}: ${error}`);
       if (error.code == 11000) {
         throw new BadRequestException('Pokemon already exists');
       }
@@ -36,12 +36,13 @@ export class PokemonService {
   }
 
   async findAll(): Promise<Pokemon[] | null> {
+    const method = this.findAll.name;
     try {
       const pokemons = await this.pokeModel.find();
       if (pokemons.length === 0) return null;
       return pokemons;
     } catch (error) {
-      this.logger.error(`${this.findAll.name}: ${error}`);
+      this.logger.error(`${method}: ${error}`);
       throw new InternalServerErrorException(
         'There is an error, check server logs',
       );
@@ -88,7 +89,7 @@ export class PokemonService {
         _id,
         updatePokemonDto,
         {
-          new: true, // Retorna el pokemon actualizado en vez del original
+          new: true,
         },
       );
       if (!pokemon) {

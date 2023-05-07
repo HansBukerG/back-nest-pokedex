@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
@@ -17,6 +18,7 @@ export class PokemonController {
   constructor(private readonly pokemonService: PokemonService) {}
 
   @Post()
+  @HttpCode(200)
   async create(@Body() createPokemonDto: CreatePokemonDto) {
     const pokemon = await this.pokemonService.create(createPokemonDto);
     return { data: pokemon };
