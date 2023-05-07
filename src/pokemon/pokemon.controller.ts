@@ -13,6 +13,7 @@ import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
+import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id/parse-mongo-id.pipe';
 
 @Controller('pokemon')
 export class PokemonController {
@@ -45,7 +46,7 @@ export class PokemonController {
 
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseMongoIdPipe) id: string,
     @Body() updatePokemonDto: UpdatePokemonDto,
   ) {
     this.consoleLog(this.update, `New request`);
@@ -57,7 +58,7 @@ export class PokemonController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseMongoIdPipe) id: string) {
     this.consoleLog(this.remove, `New request`);
     const answer = await this.pokemonService.remove(id);
     if (!answer) throw new NotFoundException(`No data found for ${id}`);

@@ -100,11 +100,11 @@ export class PokemonService {
   async remove(_id: string): Promise<boolean> {
     const method = this.remove.name;
     try {
-      const pokemon = await this.findOne(_id);
-      if (!pokemon) return false;
-      const result = await this.pokeModel.deleteOne({ _id });
-      if (result.deletedCount === 1) return true;
-      return false;
+      const { deletedCount } = await this.pokeModel.deleteOne({ _id });
+
+      if (deletedCount === 0) return false;
+
+      return true;
     } catch (error) {
       this.handleException(method, error);
     }
