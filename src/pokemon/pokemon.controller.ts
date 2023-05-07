@@ -17,29 +17,41 @@ export class PokemonController {
   constructor(private readonly pokemonService: PokemonService) {}
 
   @Post()
-  create(@Body() createPokemonDto: CreatePokemonDto) {
-    return this.pokemonService.create(createPokemonDto);
+  async create(@Body() createPokemonDto: CreatePokemonDto) {
+    const pokemon = await this.pokemonService.create(createPokemonDto);
+    return { data: pokemon };
   }
 
   @Get()
   async findAll() {
     const pokemons = await this.pokemonService.findAll();
-    if (pokemons.length === 0) throw new NotFoundException('no data found');
+    if (!pokemons) throw new NotFoundException('No data found');
     return { data: pokemons };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.pokemonService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const pokemon = await this.pokemonService.findOne(id);
+    if (!pokemon) throw new NotFoundException(`No data found for ${id}`);
+    return { data: pokemon };
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePokemonDto: UpdatePokemonDto) {
-    return this.pokemonService.update(+id, updatePokemonDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updatePokemonDto: UpdatePokemonDto,
+  ) {
+    const pokemon = await this.pokemonService.update(id, updatePokemonDto);
+    if (!pokemon) {
+      throw new NotFoundException(`No data found for ${id}`);
+    }
+    return { data: pokemon };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.pokemonService.remove(+id);
+  async remove(@Param('id') id: string) {
+    const answer = this.pokemonService.remove(id);
+    if (!answer) throw new NotFoundException(`No data found for ${id}`);
+    return { message: `Value with _id: ${id} has been deleted` };
   }
 }

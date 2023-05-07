@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InternalServerErrorException } from '@nestjs/common/exceptions/internal-server-error.exception';
-import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
@@ -22,7 +21,7 @@ export class PokemonService {
       createPokemonDto.name = createPokemonDto.name.toLowerCase();
       const pokemon = await this.pokeModel.create(createPokemonDto);
       this.logger.log(
-        `${method}: A new pokemon has been added to database: ${pokemon}`,
+        `${method}: A new pokemon has been added to database: ${pokemon._id}`,
       );
       return pokemon;
     } catch (error) {
@@ -36,25 +35,87 @@ export class PokemonService {
     }
   }
 
-  async findAll() {
+  async findAll(): Promise<Pokemon[] | null> {
     try {
       const pokemons = await this.pokeModel.find();
+      if (pokemons.length === 0) return null;
       return pokemons;
     } catch (error) {
       this.logger.error(`${this.findAll.name}: ${error}`);
-      throw new Error(error);
+      throw new InternalServerErrorException(
+        'There is an error, check server logs',
+      );
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} pokemon`;
+  async findOne(name: string): Promise<Pokemon | null> {
+    const method = this.findOne.name;
+    try {
+      const pokemon = await this.pokeModel.findOne({
+        name,
+      });
+      return pokemon || null;
+    } catch (error) {
+      this.logger.error(`${method}: ${error}`);
+      throw new InternalServerErrorException(
+        'There is an error, check server logs',
+      );
+    }
   }
 
-  update(id: number, updatePokemonDto: UpdatePokemonDto) {
-    return `This action updates a #${id} pokemon`;
+  async findById(_id: string): Promise<Pokemon | null> {
+    const method = this.findOne.name;
+    try {
+      const pokemon = await this.pokeModel.findOne({
+        _id,
+      });
+      return pokemon || null;
+    } catch (error) {
+      this.logger.error(`${method}: ${error}`);
+      throw new InternalServerErrorException(
+        'There is an error, check server logs',
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} pokemon`;
+  async update(
+    _id: string,
+    updatePokemonDto: UpdatePokemonDto,
+  ): Promise<Pokemon | null> {
+    const method = this.update.name;
+    try {
+      const pokemon = await this.pokeModel.findByIdAndUpdate(
+        _id,
+        updatePokemonDto,
+        {
+          new: true, // Retorna el pokemon actualizado en vez del original
+        },
+      );
+      if (!pokemon) {
+        return null;
+      }
+      return pokemon;
+    } catch (error) {
+      this.logger.error(`${method}: ${error}`);
+      throw new InternalServerErrorException(
+        'There is an error, check server logs',
+      );
+    }
+  }
+
+  async remove(_id: string): Promise<boolean> {
+    const method = this.remove.name;
+    try {
+      const pokemon = await this.findById(_id);
+      if (!pokemon) return false;
+      const result = await this.pokeModel.deleteOne({ _id });
+      if (result.deletedCount === 1) return true;
+      return false;
+    } catch (error) {
+      this.logger.error(`${method}: ${error}`);
+      throw new InternalServerErrorException(
+        'There is an error, check server logs',
+      );
+    }
   }
 }
