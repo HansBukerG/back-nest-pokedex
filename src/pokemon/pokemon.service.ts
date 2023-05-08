@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InternalServerErrorException } from '@nestjs/common/exceptions/internal-server-error.exception';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
@@ -29,10 +30,18 @@ export class PokemonService {
     }
   }
 
-  async findAll(): Promise<Pokemon[] | null> {
+  async findAll(paginationDto: PaginationDto): Promise<Pokemon[] | null> {
     const method = this.findAll.name;
     try {
-      const pokemons = await this.pokeModel.find();
+      const { limit = 10, offset = 0 } = paginationDto;
+      const pokemons = await this.pokeModel
+        .find()
+        .limit(limit)
+        .skip(offset)
+        .sort({
+          dni: 1,
+        })
+        .select(['-__v', '-_id']);
       if (pokemons.length === 0) return null;
       return pokemons;
     } catch (error) {
